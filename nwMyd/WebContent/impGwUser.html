@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Pragma" content="no-cache">
+<title>用户数据导入</title>
+<link rel="stylesheet" href="layui/css/layui.css">
+</head>
+<body>
+	<form class="layui-form" action="" enctype="multipart/form-data">
+		专项名称:
+		<div class="layui-inline">
+			<select name="ZX" id="ZX">
+				<option value="100">电话调查结果</option>
+				<option value="101">网络调查结果</option>
+			</select>
+
+		</div>
+		<div class="layui-inline">
+			<input type="radio" class="roleid" name="roleid" value="1"
+				title="数据追加" lay-filter="radio1"> <input type="radio"
+				class="roleid" name="roleid" value="2" title="覆盖" checked
+				lay-filter="radio1">
+		</div>
+		<div class="layui-inline">
+			<button type="button" class="layui-btn" id="chooseFile">
+				<i class="layui-icon">&#xe67c;</i>选择文件
+			</button>
+		</div>
+		<div class="layui-inline" id="showDo">
+			<button type="button" class="layui-btn" id="shangchuanfile">上传</button>
+		</div>
+		<!--  style="display:none" -->
+		<div class="layui-inline" id="showDo">
+			<button type="button" class="layui-btn" id="doMyd">
+				<i class="layui-icon">&#xe652;</i>计算满意度
+			</button>
+		</div>
+	</form>
+	<script src="layui/layui.js"></script>
+	<script>
+		layui.use([ 'upload', 'form', 'layer' ], function() {
+			var upload = layui.upload;
+			var layer = layui.layer;
+			var form = layui.form;
+			var  thisitem="";
+			$ = layui.jquery;//使用jQuery对象
+			/*  $.getJSON("getProjects", function (data) {
+			    $.each(data.dataList, function (i, item) {
+			        $('#pro_no').append('<option  value=' + item.PRO_NO + '>' + item.PRO_NAME + "</option>");
+			    });
+			    form.render('select');
+			 }); */
+			//执行实例
+			var uploadInst = upload.render({
+				elem : '#chooseFile' //绑定元素
+				,
+				url : 'gwUser'//上传接口
+				,
+				auto:false
+				,
+				bindAction:"#shangchuanfile"
+				,
+				before : function(obj) { //obj参数包含的信息，跟 choose回调完全一致，可参见上文。
+					var sName = $('#ZX').val();
+					var repeat = $("input[name='roleid']:checked").val();
+					uploadInst.config.data.survyName = sName;
+					uploadInst.config.data.repeat = repeat;
+					layer.load(); //上传loading
+				},
+				done : function(res, index, upload) { //上传后的回调
+					layer.closeAll('loading'); //关闭loading
+					if (res) {
+						layer.msg("成功啦");
+						thisitem=this.item;
+						//if($('#ZX').val()=='100'){
+						$("#showDo").show();
+						//}
+						//$("#showDo").hide();
+					} else {
+						layer.msg("失败啦:" + res);
+					}
+				},
+				exts : 'xls|xlsx',
+				accept : 'file' //允许上传的文件类型
+				,
+				error : function(res) {
+					//请求异常回调
+					layer.msg("失败啦:" + res);
+					layer.closeAll('loading'); //关闭loading
+				}
+			});
+			$("#doMyd").click(function() {
+				layer.load();
+				$.ajax({
+					url : "execMyd",
+					type : "POST",
+					data : {
+						ZX : $('#ZX').val()
+					},
+					success : function(data) {
+						layer.closeAll('loading');
+						var json=JSON.parse(data);
+						if (data) {
+						 location=json.local+"nwMyd/UploadExcel";   //跳转到下载文件servlet中
+							layer.msg('计算成功');
+						}
+					},
+					error : function() {
+						layer.msg("连接服务器失败");
+					},
+					complete : function() {
+						//  $("#btn").removeAttr("disabled");
+					}
+				});
+			});
+		});
+	</script>
+</body>
+</html>
